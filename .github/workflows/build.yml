@@ -10,6 +10,7 @@ jobs:
       - name: Configure secrets
         run: |
           cd samples/CameraAccessAndroid
+          sed -i '/org.gradle.java.home/d' gradle.properties || true
           echo "github_token=${{ secrets.META_SDK_TOKEN }}" >> local.properties
           echo "gemini_api_key=${{ secrets.GEMINI_KEY }}" >> local.properties
       - name: Build
