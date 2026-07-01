@@ -12,7 +12,19 @@ jobs:
           cd samples/CameraAccessAndroid
           sed -i '/org.gradle.java.home/d' gradle.properties || true
           echo "github_token=${{ secrets.META_SDK_TOKEN }}" >> local.properties
-          echo "gemini_api_key=${{ secrets.GEMINI_KEY }}" >> local.properties
+          cat > app/src/main/java/com/meta/wearable/dat/externalsampleapps/cameraaccess/Secrets.kt <<'KT'
+          package com.meta.wearable.dat.externalsampleapps.cameraaccess
+
+          object Secrets {
+              const val geminiAPIKey: String = "__GEMINI__"
+              const val openClawHost: String = ""
+              const val openClawPort: Int = 0
+              const val openClawHookToken: String = ""
+              const val openClawGatewayToken: String = ""
+              const val webrtcSignalingURL: String = ""
+          }
+          KT
+          sed -i "s|__GEMINI__|${{ secrets.GEMINI_KEY }}|" app/src/main/java/com/meta/wearable/dat/externalsampleapps/cameraaccess/Secrets.kt
       - name: Build
         run: cd samples/CameraAccessAndroid && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4
