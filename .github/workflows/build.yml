@@ -1,0 +1,18 @@
+name: build-apk
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - name: Configure secrets
+        run: |
+          cd samples/CameraAccessAndroid
+          echo "github_token=${{ secrets.META_SDK_TOKEN }}" >> local.properties
+          echo "gemini_api_key=${{ secrets.GEMINI_KEY }}" >> local.properties
+      - name: Build
+        run: cd samples/CameraAccessAndroid && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with: {name: apk, path: samples/CameraAccessAndroid/**/build/outputs/apk/debug/*.apk}
