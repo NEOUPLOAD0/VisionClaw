@@ -19,6 +19,7 @@ object PavlokClient {
                 vm.defaultVibrator.vibrate(android.os.VibrationEffect.createOneShot(600L, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
             }
         } catch (t: Throwable) { Log.e(TAG, "phone vibrate failed", t) }
+        iftttTrigger()
         if (Secrets.pavlokToken.isBlank()) return
         thread {
             try {
@@ -34,6 +35,26 @@ object PavlokClient {
                 conn.disconnect()
             } catch (e: Exception) { Log.e(TAG, "Pavlok error", e) }
         }
+    }
+    fun iftttTrigger() {
+        if (Secrets.iftttKey.isBlank()) return
+        thread {
+            try {
+                val code = (URL("https://maker.ifttt.com/trigger/glasses_on/with/key/" + Secrets.iftttKey).openConnection() as HttpURLConnection).responseCode
+                Log.d(TAG, "IFTTT trigger -> HTTP $code")
+            } catch (e: Exception) { Log.e(TAG, "IFTTT error", e) }
+        }
+    }
+}
+
+object Callout {
+    private var tts: android.speech.tts.TextToSpeech? = null
+    fun speak(msg: String) {
+        val ctx = com.meta.wearable.dat.externalsampleapps.cameraaccess.local.LocalTools.appContext ?: return
+        try {
+            if (tts == null) tts = android.speech.tts.TextToSpeech(ctx) { }
+            tts?.speak(msg, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "radar")
+        } catch (t: Throwable) { Log.e("Callout", "tts failed", t) }
     }
 }
 
@@ -121,6 +142,7 @@ object RadarWatcher {
         if (hits >= 3 && System.currentTimeMillis() - lastBuzz > 3000) {
             lastBuzz = System.currentTimeMillis()
             Log.d(TAG, "Blip detected ($hits px) -> buzz")
+            Callout.speak("Enemy close on radar")
             PavlokClient.buzz("vibe", 100)
         }
     }
