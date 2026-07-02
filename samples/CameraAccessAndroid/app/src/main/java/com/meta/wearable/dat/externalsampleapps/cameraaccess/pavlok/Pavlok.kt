@@ -67,36 +67,51 @@ object RadarWatcher {
     @Volatile var enabled = false
     @Volatile var corner = "top_left"
     @Volatile private var lastBuzz = 0L
+    @Volatile private var scanning = false
 
     fun onFrame(bitmap: Bitmap) {
-        if (!enabled) return
-        try {
-            val w = bitmap.width; val h = bitmap.height
-            val rw = w / 4; val rh = h / 4
-            val x0 = if (corner.contains("right")) w - rw else 0
-            val y0 = if (corner.contains("bottom")) h - rh else 0
-            val cx = x0 + rw / 2; val cy = y0 + rh / 2
-            val radius = (minOf(rw, rh) * 0.35).toInt()
-            var hits = 0
-            var x = maxOf(cx - radius, 0)
-            while (x < minOf(cx + radius, w)) {
-                var y = maxOf(cy - radius, 0)
-                while (y < minOf(cy + radius, h)) {
-                    val dx = x - cx; val dy = y - cy
-                    if (dx * dx + dy * dy <= radius * radius) {
-                        val p = bitmap.getPixel(x, y)
-                        val r = (p shr 16) and 0xFF; val g = (p shr 8) and 0xFF; val b = p and 0xFF
-                        if (r > 150 && r > g + 60 && r > b + 60) hits++
-                    }
-                    y += 3
+        if (!enabled || scanning) return
+        scanning = true
+        val safe = try {
+            if (bitmap.config == Bitmap.Config.HARDWARE) bitmap.copy(Bitmap.Config.ARGB_8888, false)
+            else bitmap
+        } catch (t: Throwable) { scanning = false; return }
+        thread {
+            try { scan(safe) } catch (t: Throwable) { Log.e(TAG, "scan error", t) }
+            finally { if (safe !== bitmap) runCatching { safe.recycle() }; scanning = false }
+        }
+    }
+
+    private fun scan(bmp: Bitmap) {
+        val w = bmp.width; val h = bmp.height
+        if (w < 40 || h < 40) return
+        val rw = w / 4; val rh = h / 4
+        val x0 = if (corner.contains("right")) w - rw else 0
+        val y0 = if (corner.contains("bottom")) h - rh else 0
+        val px = IntArray(rw * rh)
+        bmp.getPixels(px, 0, rw, x0, y0, rw, rh)
+        val cx = rw / 2; val cy = rh / 2
+        val radius = (minOf(rw, rh) * 0.35).toInt()
+        val r2 = radius * radius
+        var hits = 0
+        var y = 0
+        while (y < rh) {
+            var x = 0
+            while (x < rw) {
+                val dx = x - cx; val dy = y - cy
+                if (dx * dx + dy * dy <= r2) {
+                    val p = px[y * rw + x]
+                    val r = (p shr 16) and 0xFF; val g = (p shr 8) and 0xFF; val b = p and 0xFF
+                    if (r > 150 && r > g + 60 && r > b + 60) hits++
                 }
                 x += 3
             }
-            if (hits >= 10 && System.currentTimeMillis() - lastBuzz > 3000) {
-                lastBuzz = System.currentTimeMillis()
-                Log.d(TAG, "Blip detected ($hits px) -> buzz")
-                PavlokClient.buzz("vibe", 100)
-            }
-        } catch (e: Exception) { Log.e(TAG, "scan error", e) }
+            y += 3
+        }
+        if (hits >= 10 && System.currentTimeMillis() - lastBuzz > 3000) {
+            lastBuzz = System.currentTimeMillis()
+            Log.d(TAG, "Blip detected ($hits px) -> buzz")
+            PavlokClient.buzz("vibe", 100)
+        }
     }
 }
