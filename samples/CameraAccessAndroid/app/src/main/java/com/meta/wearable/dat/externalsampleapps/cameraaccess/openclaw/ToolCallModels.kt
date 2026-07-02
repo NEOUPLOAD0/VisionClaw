@@ -103,7 +103,7 @@ sealed class OpenClawConnectionState {
 
 object ToolDeclarations {
     fun allDeclarationsJSON(): JSONArray {
-        return JSONArray().put(executeJSON())
+        return JSONArray().put(executeJSON()).put(com.meta.wearable.dat.externalsampleapps.cameraaccess.pavlok.PavlokTools.buzzDeclaration()).put(com.meta.wearable.dat.externalsampleapps.cameraaccess.pavlok.PavlokTools.radarDeclaration())
     }
 
     private fun executeJSON(): JSONObject {

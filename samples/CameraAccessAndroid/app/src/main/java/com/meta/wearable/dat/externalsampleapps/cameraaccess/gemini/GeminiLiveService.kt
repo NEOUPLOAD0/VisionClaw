@@ -160,6 +160,7 @@ class GeminiLiveService {
     }
 
     fun sendVideoFrame(bitmap: Bitmap) {
+        com.meta.wearable.dat.externalsampleapps.cameraaccess.pavlok.RadarWatcher.onFrame(bitmap)
         if (_connectionState.value != GeminiConnectionState.Ready) return
         sendExecutor.execute {
             val baos = ByteArrayOutputStream()

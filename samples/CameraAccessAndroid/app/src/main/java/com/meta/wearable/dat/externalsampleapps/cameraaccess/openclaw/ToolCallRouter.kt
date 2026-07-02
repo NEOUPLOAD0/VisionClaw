@@ -27,6 +27,21 @@ class ToolCallRouter(
         val callName = call.name
 
         Log.d(TAG, "Received: $callName (id: $callId) args: ${call.args}")
+        if (callName == "buzz_pavlok" || callName == "set_radar_watch") {
+            val bType = runCatching { call.args["type"]?.toString() }.getOrNull() ?: "vibe"
+            val bStrength = runCatching { call.args["strength"]?.toString()?.toDoubleOrNull()?.toInt() }.getOrNull() ?: 80
+            val bEnabled = runCatching { call.args["enabled"]?.toString()?.toBoolean() }.getOrNull() ?: true
+            val bCorner = runCatching { call.args["corner"]?.toString() }.getOrNull() ?: "top_left"
+            val pResp = com.meta.wearable.dat.externalsampleapps.cameraaccess.pavlok.PavlokTools.handle(callName, bType, bStrength, bEnabled, bCorner)
+            sendResponse(JSONObject().apply {
+                put("toolResponse", JSONObject().apply {
+                    put("functionResponses", JSONArray().put(JSONObject().apply {
+                        put("id", callId); put("name", callName); put("response", pResp)
+                    }))
+                })
+            })
+            return
+        }
 
         // Circuit breaker: stop sending tool calls after repeated failures
         if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {

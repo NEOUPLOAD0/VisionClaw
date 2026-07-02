@@ -23,9 +23,10 @@ jobs:
             '    const val openClawHookToken: String = ""' \
             '    const val openClawGatewayToken: String = ""' \
             '    const val webrtcSignalingURL: String = ""' \
+            '    const val pavlokToken: String = "__PAVLOK__"' \
             '}' > "$F"
           sed -i "s|__GEMINI__|${{ secrets.GEMINI_KEY }}|" "$F"
-          cat "$F"
+          sed -i "s|__PAVLOK__|${{ secrets.PAVLOK_TOKEN }}|" "$F"
       - name: Build
         run: cd samples/CameraAccessAndroid && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
       - uses: actions/upload-artifact@v4
