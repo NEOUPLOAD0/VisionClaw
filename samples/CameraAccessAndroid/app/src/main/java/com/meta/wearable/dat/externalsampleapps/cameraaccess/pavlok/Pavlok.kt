@@ -11,6 +11,15 @@ import org.json.JSONObject
 object PavlokClient {
     private const val TAG = "PavlokClient"
     fun buzz(type: String = "vibe", strength: Int = 80) {
+        // Local fallback: vibrate the phone immediately (no cloud needed)
+        try {
+            val ctx = com.meta.wearable.dat.externalsampleapps.cameraaccess.local.LocalTools.appContext
+            if (ctx != null) {
+                val vm = ctx.getSystemService(android.content.Context.VIBRATOR_MANAGER_SERVICE) as android.os.VibratorManager
+                vm.defaultVibrator.vibrate(android.os.VibrationEffect.createOneShot(600L, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+            }
+        } catch (t: Throwable) { Log.e(TAG, "phone vibrate failed", t) }
+        if (Secrets.pavlokToken.isBlank()) return
         thread {
             try {
                 val conn = URL("https://api.pavlok.com/api/v5/stimulus/send").openConnection() as HttpURLConnection
@@ -85,13 +94,13 @@ object RadarWatcher {
     private fun scan(bmp: Bitmap) {
         val w = bmp.width; val h = bmp.height
         if (w < 40 || h < 40) return
-        val rw = w / 4; val rh = h / 4
+        val rw = w / 3; val rh = h / 3
         val x0 = if (corner.contains("right")) w - rw else 0
         val y0 = if (corner.contains("bottom")) h - rh else 0
         val px = IntArray(rw * rh)
         bmp.getPixels(px, 0, rw, x0, y0, rw, rh)
         val cx = rw / 2; val cy = rh / 2
-        val radius = (minOf(rw, rh) * 0.35).toInt()
+        val radius = (minOf(rw, rh) * 0.5).toInt()
         val r2 = radius * radius
         var hits = 0
         var y = 0
@@ -102,13 +111,14 @@ object RadarWatcher {
                 if (dx * dx + dy * dy <= r2) {
                     val p = px[y * rw + x]
                     val r = (p shr 16) and 0xFF; val g = (p shr 8) and 0xFF; val b = p and 0xFF
-                    if (r > 150 && r > g + 60 && r > b + 60) hits++
+                    if (r > 120 && r > g + 40 && r > b + 40) hits++
                 }
                 x += 3
             }
             y += 3
         }
-        if (hits >= 10 && System.currentTimeMillis() - lastBuzz > 3000) {
+        Log.d(TAG, "scan hits=$hits corner=$corner ${bmp.width}x${bmp.height}")
+        if (hits >= 3 && System.currentTimeMillis() - lastBuzz > 3000) {
             lastBuzz = System.currentTimeMillis()
             Log.d(TAG, "Blip detected ($hits px) -> buzz")
             PavlokClient.buzz("vibe", 100)
