@@ -62,6 +62,7 @@ class MainActivity : ComponentActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    com.meta.wearable.dat.externalsampleapps.cameraaccess.local.LocalTools.appContext = applicationContext
     enableEdgeToEdge()
 
     // Initialize settings with app context

@@ -27,6 +27,22 @@ class ToolCallRouter(
         val callName = call.name
 
         Log.d(TAG, "Received: $callName (id: $callId) args: ${call.args}")
+        if (callName == "set_timer" || callName == "set_alarm") {
+            val tMin = runCatching { call.args["minutes"]?.toString()?.toDoubleOrNull()?.toInt() }.getOrNull() ?: 0
+            val tSec = runCatching { call.args["seconds"]?.toString()?.toDoubleOrNull()?.toInt() }.getOrNull() ?: 0
+            val tHour = runCatching { call.args["hour"]?.toString()?.toDoubleOrNull()?.toInt() }.getOrNull() ?: 0
+            val tMinute = runCatching { call.args["minute"]?.toString()?.toDoubleOrNull()?.toInt() }.getOrNull() ?: 0
+            val tLabel = runCatching { call.args["label"]?.toString() }.getOrNull() ?: ""
+            val tResp = com.meta.wearable.dat.externalsampleapps.cameraaccess.local.LocalTools.handle(callName, tMin, tSec, tHour, tMinute, tLabel)
+            sendResponse(JSONObject().apply {
+                put("toolResponse", JSONObject().apply {
+                    put("functionResponses", JSONArray().put(JSONObject().apply {
+                        put("id", callId); put("name", callName); put("response", tResp)
+                    }))
+                })
+            })
+            return
+        }
         if (callName == "buzz_pavlok" || callName == "set_radar_watch") {
             val bType = runCatching { call.args["type"]?.toString() }.getOrNull() ?: "vibe"
             val bStrength = runCatching { call.args["strength"]?.toString()?.toDoubleOrNull()?.toInt() }.getOrNull() ?: 80
