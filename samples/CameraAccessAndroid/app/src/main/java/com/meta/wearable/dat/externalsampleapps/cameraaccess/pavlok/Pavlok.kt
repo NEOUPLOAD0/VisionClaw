@@ -40,7 +40,7 @@ object PavlokClient {
         if (Secrets.iftttKey.isBlank()) return
         thread {
             try {
-                val code = (URL("https://maker.ifttt.com/trigger/glasses_on/with/key/" + Secrets.iftttKey).openConnection() as HttpURLConnection).responseCode
+                val code = (URL("https://maker.ifttt.com/trigger/metaShock/with/key/" + Secrets.iftttKey).openConnection() as HttpURLConnection).responseCode
                 Log.d(TAG, "IFTTT trigger -> HTTP $code")
             } catch (e: Exception) { Log.e(TAG, "IFTTT error", e) }
         }
@@ -142,7 +142,7 @@ object RadarWatcher {
         if (hits >= 3 && System.currentTimeMillis() - lastBuzz > 3000) {
             lastBuzz = System.currentTimeMillis()
             Log.d(TAG, "Blip detected ($hits px) -> buzz")
-            Callout.speak("Enemy close on radar")
+            Callout.speak("Watch out")
             PavlokClient.buzz("vibe", 100)
         }
     }
