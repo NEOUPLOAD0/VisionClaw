@@ -115,37 +115,32 @@ object RadarWatcher {
 
     private fun scan(bmp: Bitmap) {
         val w = bmp.width; val h = bmp.height
-        if (w < 40 || h < 40) return
-        val rw = w / 3; val rh = h / 3
+        if (w < 60 || h < 60) return
+        // Small minimap-sized box: 22% of width, 30% of height, tucked in the corner
+        val rw = (w * 0.22).toInt(); val rh = (h * 0.30).toInt()
         val x0 = if (corner.contains("right")) w - rw else 0
         val y0 = if (corner.contains("bottom")) h - rh else 0
         val px = IntArray(rw * rh)
         bmp.getPixels(px, 0, rw, x0, y0, rw, rh)
-        val cx = rw / 2; val cy = rh / 2
-        val radius = (minOf(rw, rh) * 0.5).toInt()
-        val r2 = radius * radius
         var hits = 0
         var y = 0
         while (y < rh) {
             var x = 0
             while (x < rw) {
-                val dx = x - cx; val dy = y - cy
-                if (dx * dx + dy * dy <= r2) {
-                    val p = px[y * rw + x]
-                    val r = (p shr 16) and 0xFF; val g = (p shr 8) and 0xFF; val b = p and 0xFF
-                    if (r > 150 && r > g + 70 && r > b + 70) hits++
-                }
-                x += 3
+                val p = px[y * rw + x]
+                val r = (p shr 16) and 0xFF; val g = (p shr 8) and 0xFF; val b = p and 0xFF
+                if (r > 135 && r > g + 55 && r > b + 55 && g < 130) hits++
+                x += 2
             }
-            y += 3
+            y += 2
         }
-        Log.d(TAG, "scan hits=$hits streak=$streak corner=$corner")
-        val plausible = hits in 3..80
+        Log.d(TAG, "scan hits=$hits streak=$streak box=${rw}x${rh} corner=$corner")
+        val plausible = hits in 2..120
         streak = if (plausible) streak + 1 else 0
-        if (streak >= 4 && System.currentTimeMillis() - lastBuzz > 1500) {
+        if (streak >= 3 && System.currentTimeMillis() - lastBuzz > 1500) {
             streak = 0
             lastBuzz = System.currentTimeMillis()
-            Log.d(TAG, "Blip detected ($hits px) -> buzz")
+            Log.d(TAG, "ALERT hits=$hits")
             Callout.speak("Watch out")
             PavlokClient.buzz("vibe", 100)
         }
