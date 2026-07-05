@@ -139,7 +139,7 @@ object RadarWatcher {
             y += 3
         }
         Log.d(TAG, "scan hits=$hits corner=$corner ${bmp.width}x${bmp.height}")
-        if (hits >= 3 && System.currentTimeMillis() - lastBuzz > 3000) {
+        if (hits >= 3 && System.currentTimeMillis() - lastBuzz > 1500) {
             lastBuzz = System.currentTimeMillis()
             Log.d(TAG, "Blip detected ($hits px) -> buzz")
             Callout.speak("Watch out")

@@ -109,6 +109,7 @@ class StreamViewModel(
     phoneCameraManager = manager
 
     manager.onFrameCaptured = { bitmap ->
+      com.meta.wearable.dat.externalsampleapps.cameraaccess.pavlok.RadarWatcher.onFrame(bitmap)
       _uiState.update { it.copy(videoFrame = bitmap) }
       // Forward to Gemini (throttled inside the VM)
       geminiViewModel?.sendVideoFrameIfThrottled(bitmap)
@@ -237,6 +238,7 @@ class StreamViewModel(
     val bitmap = BitmapFactory.decodeByteArray(out, 0, out.size)
     _uiState.update { it.copy(videoFrame = bitmap) }
 
+    com.meta.wearable.dat.externalsampleapps.cameraaccess.pavlok.RadarWatcher.onFrame(bitmap)
     // Forward to Gemini (throttled inside the VM)
     geminiViewModel?.sendVideoFrameIfThrottled(bitmap)
     // Forward to WebRTC (every frame)
