@@ -98,6 +98,7 @@ object RadarWatcher {
     @Volatile var corner = "top_left"
     @Volatile private var lastBuzz = 0L
     @Volatile private var scanning = false
+    @Volatile private var streak = 0
 
     fun onFrame(bitmap: Bitmap) {
         if (!enabled || scanning) return
@@ -132,14 +133,17 @@ object RadarWatcher {
                 if (dx * dx + dy * dy <= r2) {
                     val p = px[y * rw + x]
                     val r = (p shr 16) and 0xFF; val g = (p shr 8) and 0xFF; val b = p and 0xFF
-                    if (r > 120 && r > g + 40 && r > b + 40) hits++
+                    if (r > 150 && r > g + 70 && r > b + 70) hits++
                 }
                 x += 3
             }
             y += 3
         }
-        Log.d(TAG, "scan hits=$hits corner=$corner ${bmp.width}x${bmp.height}")
-        if (hits >= 3 && System.currentTimeMillis() - lastBuzz > 1500) {
+        Log.d(TAG, "scan hits=$hits streak=$streak corner=$corner")
+        val plausible = hits in 3..80
+        streak = if (plausible) streak + 1 else 0
+        if (streak >= 4 && System.currentTimeMillis() - lastBuzz > 1500) {
+            streak = 0
             lastBuzz = System.currentTimeMillis()
             Log.d(TAG, "Blip detected ($hits px) -> buzz")
             Callout.speak("Watch out")
